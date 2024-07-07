@@ -57,4 +57,65 @@ describe("generatePassword", () => {
       generatePassword({ length: 100, uniqueCharacters: true });
     }).toThrow("Length exceeds the number of unique characters available");
   });
+
+  test("generates password without special characters", () => {
+    const password = generatePassword({
+      containSpecialCharacters: false,
+    });
+    expect(password).toHaveLength(8);
+    expect(/[!@#$%^&*()_+\[\]{}|;:,.<>?]/.test(password)).toBe(false);
+    expect(/[0-9]/.test(password)).toBe(true);
+    expect(/[a-z]/.test(password)).toBe(true);
+    expect(/[A-Z]/.test(password)).toBe(true);
+  });
+
+  test("generates password without uppercase characters", () => {
+    const password = generatePassword({
+      uppercase: false,
+    });
+    expect(password).toHaveLength(8);
+    expect(/[A-Z]/.test(password)).toBe(false);
+    expect(/[0-9]/.test(password)).toBe(true);
+    expect(/[a-z]/.test(password)).toBe(true);
+    expect(/[!@#$%^&*()_+\[\]{}|;:,.<>?]/.test(password)).toBe(true);
+  });
+
+  test("generates password without lowercase characters", () => {
+    const password = generatePassword({
+      lowercase: false,
+    });
+    expect(password).toHaveLength(8);
+    expect(/[a-z]/.test(password)).toBe(false);
+    expect(/[0-9]/.test(password)).toBe(true);
+    expect(/[A-Z]/.test(password)).toBe(true);
+    expect(/[!@#$%^&*()_+\[\]{}|;:,.<>?]/.test(password)).toBe(true);
+  });
+
+  test("generates password with only special characters", () => {
+    const password = generatePassword({
+      numbers: false,
+      lowercase: false,
+      uppercase: false,
+      containSpecialCharacters: true,
+    });
+    expect(password).toHaveLength(8);
+    expect(/^[!@#$%^&*()_+\[\]{}|;:,.<>?]+$/.test(password)).toBe(true);
+  });
+
+  test("generates password with a mix of all character types and unique characters", () => {
+    const password = generatePassword({
+      length: 10,
+      numbers: true,
+      lowercase: true,
+      uppercase: true,
+      containSpecialCharacters: true,
+      uniqueCharacters: true,
+    });
+    const uniqueChars = new Set(password.split(""));
+    expect(uniqueChars.size).toBe(password.length);
+    expect(/[0-9]/.test(password)).toBe(true);
+    expect(/[a-z]/.test(password)).toBe(true);
+    expect(/[A-Z]/.test(password)).toBe(true);
+    expect(/[!@#$%^&*()_+\[\]{}|;:,.<>?]/.test(password)).toBe(true);
+  });
 });
