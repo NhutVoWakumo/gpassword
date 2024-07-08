@@ -1,4 +1,84 @@
 import { generatePassword } from "./index";
+import Fuzz from "jest-fuzz";
+
+const fuzzData = Fuzz.Fuzzer({
+  length: Fuzz.int({ min: 0, max: 200 }),
+  numbers: Fuzz.bool(),
+  lowercase: Fuzz.bool(),
+  uppercase: Fuzz.bool(),
+  uniqueCharacters: Fuzz.bool(),
+  containSpecialCharacters: Fuzz.bool(),
+});
+
+Fuzz.test("Fuzz test for generatePassword", fuzzData(), (props: any) => {
+  const {
+    length,
+    numbers,
+    lowercase,
+    uppercase,
+    containSpecialCharacters,
+    uniqueCharacters,
+  } = props;
+
+  const checks = [
+    { enabled: numbers, chars: "0123456789" },
+    { enabled: lowercase, chars: "abcdefghijklmnopqrstuvwxyz" },
+    { enabled: uppercase, chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZ" },
+    { enabled: containSpecialCharacters, chars: "!@#$%^&*()_+[]{}|;:,.<>?" },
+  ];
+
+  let maxLengthForUniqueChars = 0;
+  checks.forEach((check) => {
+    if (check.enabled) maxLengthForUniqueChars += check.chars.length;
+  });
+
+  const notContainConditions =
+    !numbers && !lowercase && !uppercase && !containSpecialCharacters;
+
+  const lengthSmallerThanCondition =
+    length < numbers + lowercase + uppercase + containSpecialCharacters;
+
+  const lengthBiggerThanUniqueRange =
+    length > maxLengthForUniqueChars && uniqueCharacters;
+
+  if (notContainConditions) {
+    expect(() => generatePassword(props)).toThrow(
+      "At least one character type should be included"
+    );
+    return;
+  }
+
+  if (lengthSmallerThanCondition) {
+    expect(() => generatePassword(props)).toThrow(
+      "Length cannot be smaller than the number of required conditions"
+    );
+    return;
+  }
+
+  if (lengthBiggerThanUniqueRange) {
+    expect(() => generatePassword(props)).toThrow(
+      "Length exceeds the number of unique characters available"
+    );
+    return;
+  }
+
+  const password = generatePassword(props);
+
+  expect(password.length).toBe(length);
+
+  checks.forEach((check) => {
+    if (check.enabled) {
+      expect(
+        password.split("").some((char) => check.chars.includes(char))
+      ).toBe(true);
+    }
+  });
+
+  if (uniqueCharacters) {
+    const uniqueChars = new Set(password);
+    expect(uniqueChars.size).toBe(password.length);
+  }
+});
 
 describe("generatePassword", () => {
   test("generates password with default settings", () => {
